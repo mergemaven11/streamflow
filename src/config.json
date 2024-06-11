@@ -1,0 +1,28 @@
+{
+    "buttons": [
+        {
+            "label": "Open Chrome",
+            "command": "chrome",
+            "icon": "chrome.png",
+            "category": "Applications"
+        },
+        {
+            "label": "Mute Audio",
+            "command": "mute",
+            "icon": "mute.png",
+            "category": "Audio"
+        },
+        {
+            "label": "Vol +",
+            "command": "volume_up",
+            "icon": "mute.png",
+            "category": "Audio"
+        },
+        {
+            "label": "Vol -",
+            "command": "volume_down",
+            "icon": "mute.png",
+            "category": "Audio"
+        }
+    ]
+}
