@@ -1,28 +1,19 @@
 {
-    "buttons": [
-        {
-            "label": "Open Chrome",
-            "command": "chrome",
-            "icon": "chrome.png",
-            "category": "Applications"
-        },
-        {
-            "label": "Mute Audio",
-            "command": "mute",
-            "icon": "mute.png",
-            "category": "Audio"
-        },
-        {
-            "label": "Vol +",
-            "command": "volume_up",
-            "icon": "mute.png",
-            "category": "Audio"
-        },
-        {
-            "label": "Vol -",
-            "command": "volume_down",
-            "icon": "mute.png",
-            "category": "Audio"
-        }
-    ]
+  "active_profile": "Default",
+  "profiles": {
+    "Default": {
+      "categories": ["Applications", "Audio", "Video", "Messages", "More"],
+      "buttons": [
+        {"label": "Open Browser", "command": "url:https://www.google.com", "icon": "", "category": "Applications", "enabled": true},
+        {"label": "Mute Audio", "command": "mute", "icon": "", "category": "Audio", "enabled": true},
+        {"label": "Volume +", "command": "volume_up", "icon": "", "category": "Audio", "enabled": true},
+        {"label": "Volume -", "command": "volume_down", "icon": "", "category": "Audio", "enabled": true}
+      ]
+    }
+  },
+  "obs": {
+    "host": "127.0.0.1",
+    "port": 4455,
+    "password": ""
+  }
 }

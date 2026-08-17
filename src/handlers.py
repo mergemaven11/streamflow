@@ -1,132 +1,188 @@
-'''
-Handlers are passed in to thhe StreamFlow class and handle
-actions such as: 
- - launching applications 
- - controlling audio
- - controlling video sources
- -  sending predefined messages
- - and more
+"""Cross-platform action handlers used by StreamFlow buttons."""
+from __future__ import annotations
 
-'''
-import platform
-import sys
+import shlex
+import shutil
 import subprocess
+import sys
 import webbrowser
-import sounddevice as sd
-import ctypes
-from ctypes import cast, POINTER
-from comtypes import CLSCTX_ALL
-from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+from dataclasses import dataclass
+from typing import Sequence
 
 
-def execute_command(command):
-    print(f"Executing command: {command}")
+@dataclass(frozen=True)
+class ActionResult:
+    success: bool
+    message: str
+
+
+def _split_command(command: str) -> list[str]:
+    parts = shlex.split(command, posix=sys.platform != "win32")
+    if sys.platform == "win32":
+        cleaned = []
+        for part in parts:
+            if len(part) >= 2 and part[0] == part[-1] and part[0] in {'"', "'"}:
+                part = part[1:-1]
+            cleaned.append(part)
+        return cleaned
+    return parts
+
+
+def _spawn(command: str, *, shell: bool = False) -> None:
+    if shell:
+        subprocess.Popen(command, shell=True)
+        return
+    parts = _split_command(command)
+    if not parts:
+        raise ValueError("Command is empty")
+    subprocess.Popen(parts)
+
+
+def _spawn_application(path: str) -> None:
+    path = path.strip()
+    if not path:
+        raise ValueError("Application path is empty")
+    if sys.platform == "darwin" and path.lower().endswith(".app"):
+        subprocess.Popen(["open", path])
+    else:
+        subprocess.Popen([path])
+
+
+def _run(args: Sequence[str]) -> None:
+    subprocess.run(list(args), check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def execute_command(command: str) -> ActionResult:
+    command = (command or "").strip()
+    if not command:
+        return ActionResult(False, "No action is configured for this button.")
     try:
         if command == "chrome":
-            if sys.platform == "win32":
-                webbrowser.get('windows-default').open('http://www.google.com')
-            elif sys.platform == "darwin":
-                subprocess.Popen(["open", "-a", "Google Chrome"])
-            else:
-                subprocess.Popen(["google-chrome"])
-        elif command == "mute":
+            webbrowser.open("https://www.google.com")
+            return ActionResult(True, "Opened the default browser.")
+        if command == "mute":
             mute_audio()
-        elif command == "volume_up":
+            return ActionResult(True, "Toggled system mute.")
+        if command == "volume_up":
             volume_up()
-        elif command == "volume_down":
+            return ActionResult(True, "Raised system volume.")
+        if command == "volume_down":
             volume_down()
-        else:
-            # Execute arbitrary shell commands
-            if sys.platform == "win32":
-                subprocess.Popen(command, shell=True)
-            else:
-                subprocess.Popen(command.split())
-    except Exception as e:
-        print(f"Failed to execute command '{command}': {e}")
+            return ActionResult(True, "Lowered system volume.")
+        if command.startswith("url:"):
+            url = command[4:].strip()
+            if not url:
+                raise ValueError("URL is empty")
+            opened = webbrowser.open(url)
+            if opened is False:
+                raise RuntimeError("The system browser did not accept the URL")
+            return ActionResult(True, f"Opened {url}")
+        if command.startswith("app:"):
+            value = command[4:].strip()
+            _spawn_application(value)
+            return ActionResult(True, f"Launched {value}")
+        if command.startswith("cmd:"):
+            value = command[4:].strip()
+            _spawn(value)
+            return ActionResult(True, f"Ran {value}")
+        if command.startswith("shell:"):
+            value = command[6:].strip()
+            if not value:
+                raise ValueError("Shell command is empty")
+            _spawn(value, shell=True)
+            return ActionResult(True, "Started shell command.")
+        _spawn(command)
+        return ActionResult(True, f"Ran {command}")
+    except Exception as exc:
+        return ActionResult(False, f"Action failed: {exc}")
 
 
-# ================= COMMANDS ========================
-
-def control_camera():
-    print("Controlling camera")
-    # Implement camera control logic
-
-def send_greeting():
-    print("Sending greeting message")
-    # Implement message sending logic
-
-def custom_action():
-    print("Performing custom action")
-    # Implement custom action logic
-
-
-def volume_up():
-    """
-    Increase the system volume by 10%.
-
-    Raises:
-        Exception: An error occurred while adjusting the volume.
-    """
-    print("Increasing volume")
+def _windows_endpoint_volume():
     try:
-        # Get the default audio endpoint and its volume control interface
-        devices = AudioUtilities.GetSpeakers()
-        interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-        volume = cast(interface, POINTER(IAudioEndpointVolume))
-        
-        # Increase the volume by 10%
-        current_volume = volume.GetMasterVolumeLevelScalar()
-        new_volume = min(current_volume + 0.1, 1.0)
-        volume.SetMasterVolumeLevelScalar(new_volume, None)
-        
-        print("Volume increased successfully")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+        from comtypes import CLSCTX_ALL
+        from ctypes import POINTER, cast
+        from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+    except ImportError as exc:
+        raise RuntimeError("Windows audio support requires pycaw/comtypes. Reinstall requirements.txt.") from exc
+    devices = AudioUtilities.GetSpeakers()
+    interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+    return cast(interface, POINTER(IAudioEndpointVolume))
 
-def volume_down():
-    """
-    Decrease the system volume by 10%.
 
-    Raises:
-        Exception: An error occurred while adjusting the volume.
-    """
-    print("Decreasing volume")
-    try:
-        # Get the default audio endpoint and its volume control interface
-        devices = AudioUtilities.GetSpeakers()
-        interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-        volume = cast(interface, POINTER(IAudioEndpointVolume))
-        
-        # Decrease the volume by 10%
-        current_volume = volume.GetMasterVolumeLevelScalar()
-        new_volume = max(current_volume - 0.1, 0.0)
-        volume.SetMasterVolumeLevelScalar(new_volume, None)
-        
-        print("Volume decreased successfully")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+def _mac_volume(direction: int) -> None:
+    delta = 5 if direction > 0 else -5
+    script = (
+        "set currentVolume to output volume of (get volume settings)\n"
+        f"set newVolume to currentVolume + ({delta})\n"
+        "if newVolume > 100 then set newVolume to 100\n"
+        "if newVolume < 0 then set newVolume to 0\n"
+        "set volume output volume newVolume"
+    )
+    _run(["osascript", "-e", script])
 
-def mute_audio():
-    """
-    Toggle the mute state of the system audio.
 
-    Raises:
-        Exception: An error occurred while toggling the mute state.
-    """
-    print("Toggling mute state")
-    try:
-        # Get the default audio endpoint and its volume control interface
-        devices = AudioUtilities.GetSpeakers()
-        interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-        volume = cast(interface, POINTER(IAudioEndpointVolume))
+def _mac_toggle_mute() -> None:
+    script = "set currentMuted to output muted of (get volume settings)\nset volume output muted (not currentMuted)"
+    _run(["osascript", "-e", script])
 
-        # Toggle the mute state
-        is_muted = volume.GetMute()
-        volume.SetMute(not is_muted, None)
 
-        if is_muted:
-            print("Audio unmuted successfully")
-        else:
-            print("Audio muted successfully")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+def _linux_audio_tool() -> str:
+    if shutil.which("wpctl"):
+        return "wpctl"
+    if shutil.which("pactl"):
+        return "pactl"
+    if shutil.which("amixer"):
+        return "amixer"
+    raise RuntimeError("No supported Linux audio tool found (wpctl, pactl, or amixer).")
+
+
+def _linux_volume(direction: int) -> None:
+    tool = _linux_audio_tool()
+    if tool == "wpctl":
+        _run(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "5%+" if direction > 0 else "5%-"])
+    elif tool == "pactl":
+        _run(["pactl", "set-sink-volume", "@DEFAULT_SINK@", "+5%" if direction > 0 else "-5%"])
+    else:
+        _run(["amixer", "-q", "sset", "Master", "5%+" if direction > 0 else "5%-"])
+
+
+def _linux_toggle_mute() -> None:
+    tool = _linux_audio_tool()
+    if tool == "wpctl":
+        _run(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"])
+    elif tool == "pactl":
+        _run(["pactl", "set-sink-mute", "@DEFAULT_SINK@", "toggle"])
+    else:
+        _run(["amixer", "-q", "sset", "Master", "toggle"])
+
+
+def volume_up() -> None:
+    if sys.platform == "win32":
+        volume = _windows_endpoint_volume()
+        current = volume.GetMasterVolumeLevelScalar()
+        volume.SetMasterVolumeLevelScalar(min(current + 0.05, 1.0), None)
+    elif sys.platform == "darwin":
+        _mac_volume(1)
+    else:
+        _linux_volume(1)
+
+
+def volume_down() -> None:
+    if sys.platform == "win32":
+        volume = _windows_endpoint_volume()
+        current = volume.GetMasterVolumeLevelScalar()
+        volume.SetMasterVolumeLevelScalar(max(current - 0.05, 0.0), None)
+    elif sys.platform == "darwin":
+        _mac_volume(-1)
+    else:
+        _linux_volume(-1)
+
+
+def mute_audio() -> None:
+    if sys.platform == "win32":
+        volume = _windows_endpoint_volume()
+        volume.SetMute(not bool(volume.GetMute()), None)
+    elif sys.platform == "darwin":
+        _mac_toggle_mute()
+    else:
+        _linux_toggle_mute()

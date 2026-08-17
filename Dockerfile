@@ -1,20 +1,14 @@
-# Use an official Python runtime as a parent image
-FROM python:3.10-slim
+FROM python:3.12-slim
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
-COPY . /app
+COPY requirements.txt requirements-dev.txt ./
+RUN pip install --no-cache-dir -r requirements-dev.txt
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+COPY src ./src
+COPY tests ./tests
 
-# Install PySide6
-RUN pip install PySide6
-
-# Make port 80 available to the world outside this container
-EXPOSE 80
-
-# Run app.py when the container launches
-CMD ["python", "src/main.py"]
+# StreamFlow is a desktop GUI. The container is intentionally used for
+# repeatable headless validation rather than pretending the app is a web service.
+ENV QT_QPA_PLATFORM=offscreen
+CMD ["python", "-m", "pytest", "-q"]

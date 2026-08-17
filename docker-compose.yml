@@ -1,6 +1,4 @@
-version: '3'
 services:
-  streamflow:
+  test:
     build: .
-    ports:
-      - "80:80"
+    command: python -m pytest -q
