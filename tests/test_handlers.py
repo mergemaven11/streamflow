@@ -39,6 +39,14 @@ def test_legacy_raw_command_stays_shell_free(monkeypatch):
     assert calls == [("python --version", False)]
 
 
+def test_app_action_preserves_paths_with_spaces(monkeypatch):
+    calls = []
+    monkeypatch.setattr(handlers.subprocess, "Popen", lambda args, **kwargs: calls.append((args, kwargs)))
+    result = handlers.execute_command("app:/opt/My App/app")
+    assert result.success is True
+    assert calls == [(["/opt/My App/app"], {})]
+
+
 def test_volume_action_failure_is_returned_not_raised(monkeypatch):
     def fail():
         raise RuntimeError("audio missing")

@@ -21,7 +21,7 @@ def _split_command(command: str) -> list[str]:
     if sys.platform == "win32":
         cleaned = []
         for part in parts:
-            if len(part) >= 2 and part[0] == part[-1] and part[0] in {"\"", "'"}:
+            if len(part) >= 2 and part[0] == part[-1] and part[0] in {'"', "'"}:
                 part = part[1:-1]
             cleaned.append(part)
         return cleaned
@@ -36,6 +36,16 @@ def _spawn(command: str, *, shell: bool = False) -> None:
     if not parts:
         raise ValueError("Command is empty")
     subprocess.Popen(parts)
+
+
+def _spawn_application(path: str) -> None:
+    path = path.strip()
+    if not path:
+        raise ValueError("Application path is empty")
+    if sys.platform == "darwin" and path.lower().endswith(".app"):
+        subprocess.Popen(["open", path])
+    else:
+        subprocess.Popen([path])
 
 
 def _run(args: Sequence[str]) -> None:
@@ -69,7 +79,7 @@ def execute_command(command: str) -> ActionResult:
             return ActionResult(True, f"Opened {url}")
         if command.startswith("app:"):
             value = command[4:].strip()
-            _spawn(value)
+            _spawn_application(value)
             return ActionResult(True, f"Launched {value}")
         if command.startswith("cmd:"):
             value = command[4:].strip()
