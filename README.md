@@ -1,15 +1,16 @@
-<h1 align="center">
-  <img alt="StreamFlow logo" src="/src/icons/logo.png" width="260px"/><br/><br/>
-</h1>
+<p align="center">
+  <img src="./src/icons/logo.png" alt="StreamFlow logo" width="260">
+</p>
 
 # StreamFlow
 
 StreamFlow is a local-first virtual stream deck for Windows, macOS, and Linux. It gives you a customizable desktop button grid for opening websites, launching applications, controlling system audio, and running local commands without requiring a cloud backend or a paid API.
 
-<div style="position: relative; width: max-content;">
-  <img src="/src/icons/demo1.png" alt="StreamFlow demo" style="width: 500px;">
-  <img src="/src/icons/demo2.png" alt="StreamFlow gallery" style="position: absolute; bottom: -1px; right: -7px; width: 350px;">
-</div>
+<p align="center">
+  <img src="./src/icons/demo1.png" alt="StreamFlow main deck" width="520">
+  <br>
+  <img src="./src/icons/demo2.png" alt="StreamFlow gallery" width="420">
+</p>
 
 ## What works
 
