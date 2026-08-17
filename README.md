@@ -167,6 +167,8 @@ Or run the validation container:
 docker compose run --rm test
 ```
 
+The current non-UI logic suite has passed 18 tests, and the modern Qt UI modules pass Python syntax compilation. A local interactive GUI smoke test is still recommended because the automated development environment used for this refactor could not launch PySide6 interactively.
+
 The Docker configuration is intentionally for headless validation. StreamFlow itself is a native Qt desktop application rather than a web service.
 
 ## Cost and hosting
