@@ -2,33 +2,70 @@
   <img src="./src/icons/logo.png" alt="StreamFlow logo" width="260">
 </p>
 
-# StreamFlow
-
-StreamFlow is a local-first virtual stream deck for Windows, macOS, and Linux. It gives you customizable desktop button grids for opening websites, launching applications, controlling system audio, controlling OBS Studio, and running local commands without requiring a cloud backend or a paid API.
+<h1 align="center">StreamFlow</h1>
 
 <p align="center">
-  <img src="./src/icons/demo1.png" alt="StreamFlow main deck" width="520">
-  <br>
-  <img src="./src/icons/demo2.png" alt="StreamFlow gallery" width="420">
+  A modern, local-first virtual control deck for Windows, macOS, and Linux.
 </p>
 
-## What works
+StreamFlow turns your desktop into a customizable action deck for launching apps, opening websites, controlling system audio, driving OBS Studio, and running local commands. It is designed to run entirely on your own machine: no cloud backend, paid API, Codespaces, Copilot, or hosted AI service is required.
 
-- Multiple profiles for separate streaming, work, gaming, or support decks.
+## Modern interface
+
+The current StreamFlow UI uses a dark, card-based desktop design with:
+
+- A branded top bar with quick profile switching.
+- A dedicated category sidebar.
+- Large action cards designed for quick clicking.
+- Active-deck and action-count context.
+- Polished empty states, forms, menus, and dialogs.
+- A consistent violet-accent visual system.
+- Responsive spacing for larger desktop windows.
+
+The original prototype screenshots have been removed from this README because the application UI has since been substantially redesigned. Fresh screenshots can be added after the current Windows build is visually smoke-tested.
+
+## Features
+
+### Decks and profiles
+
+- Multiple profiles for separate streaming, work, gaming, support, or personal decks.
+- Create, duplicate, rename, delete, and switch profiles.
 - Import and export individual profiles as portable JSON files.
 - Custom categories and button layouts.
-- Add, edit, hide, delete, and reorder buttons from the UI.
-- Right-click any deck button to edit or delete it.
-- Persistent per-user configuration stored outside the repository.
-- Open websites in the default browser.
-- Launch applications and commands without invoking a shell by default.
-- Explicit `shell:` actions when shell syntax is actually needed.
-- System mute and volume controls on Windows, macOS, and common Linux audio stacks.
-- OBS WebSocket controls for scenes, input mute, recording, and streaming.
-- Optional custom icons.
-- Headless unit tests that can run locally or in Docker.
+- Add, edit, hide, delete, and reorder actions from the UI.
+- Right-click actions to edit or delete them quickly.
+- Optional custom button icons.
 
-## Install locally
+### Desktop actions
+
+- Open websites in the default browser.
+- Launch applications, including executable paths containing spaces.
+- Run commands without invoking a shell by default.
+- Use explicit `shell:` actions when pipes, redirects, or shell expansion are actually needed.
+- Toggle system mute and adjust system volume.
+- Windows, macOS, and common Linux audio implementations.
+
+### OBS Studio
+
+StreamFlow includes local OBS WebSocket 5.x control for:
+
+- Switching scenes.
+- Toggling an input such as `Mic/Aux` mute.
+- Starting and stopping recording.
+- Starting and stopping streaming.
+- Password-authenticated OBS WebSocket connections.
+- Testing the OBS connection directly from StreamFlow settings.
+
+### Local-first configuration
+
+- Configuration is stored in `~/.streamflow/config.json` by default.
+- Existing single-deck StreamFlow configs automatically migrate into a `Default` profile.
+- `STREAMFLOW_CONFIG` can override the configuration path for portable or test setups.
+- OBS credentials remain in the local StreamFlow configuration and are not sent to a cloud service.
+
+## Quick start
+
+Clone the repository and create a virtual environment:
 
 ```bash
 git clone https://github.com/mergemaven11/streamflow.git
@@ -36,7 +73,7 @@ cd streamflow
 python -m venv .venv
 ```
 
-Activate the environment:
+Activate it:
 
 ```bash
 # Windows PowerShell
@@ -46,56 +83,48 @@ Activate the environment:
 source .venv/bin/activate
 ```
 
-Install and launch:
+Install dependencies and launch StreamFlow:
 
 ```bash
 python -m pip install -r requirements.txt
 python src/main.py
 ```
 
-### Linux audio note
-
-StreamFlow uses the first audio tool it finds: `wpctl` (PipeWire), `pactl` (PulseAudio), or `amixer` (ALSA). Install one of those through your Linux distribution if volume buttons report that no supported audio tool exists.
-
 ## OBS Studio setup
 
-StreamFlow speaks directly to the OBS WebSocket 5.x server on your computer or local network. OBS Studio 28 and newer include obs-websocket by default.
+OBS Studio 28 and newer include obs-websocket by default.
 
 1. Open OBS Studio.
 2. Open the WebSocket server settings from the **Tools** menu.
-3. Make sure the WebSocket server is enabled.
+3. Enable the WebSocket server.
 4. Keep authentication enabled and copy the password.
-5. In StreamFlow, click **OBS**.
-6. Enter the host, port, and password. The normal local settings are:
+5. In StreamFlow, open **OBS connection**.
+6. Enter the host, port, and password. Typical local settings are:
    - Host: `127.0.0.1`
    - Port: `4455`
-7. Click **Test Connection**.
+7. Select **Test Connection**.
 
-You can then create StreamFlow buttons for:
+You can then create actions such as:
 
-- **OBS: Switch scene** — enter the exact OBS scene name.
-- **OBS: Toggle input mute** — enter the exact OBS input name, such as `Mic/Aux`.
-- **OBS: Start / stop recording**
-- **OBS: Start / stop streaming**
-
-OBS credentials stay in your local StreamFlow configuration and are never sent to a cloud service.
+- **OBS: Switch scene** — use the exact OBS scene name.
+- **OBS: Toggle input mute** — use the exact input name, such as `Mic/Aux`.
+- **OBS: Start / stop recording**.
+- **OBS: Start / stop streaming**.
 
 ## Profiles
 
-Use the **Profiles** button to maintain separate decks.
+Open **Profiles** from the StreamFlow sidebar to maintain separate decks.
 
 - **New** creates a blank deck.
 - **Duplicate** copies an existing deck.
-- **Rename** changes the profile name.
+- **Rename** changes a profile name.
 - **Delete** removes a profile while ensuring at least one remains.
-- **Import Profile** loads a `.json` deck.
-- **Export Profile** saves one profile as a portable `.streamflow.json` file.
+- **Import Profile** loads a JSON deck.
+- **Export Profile** saves a portable `.streamflow.json` file.
 
-Existing StreamFlow configurations are migrated automatically into a profile named **Default** the first time this version loads them.
+## Action format
 
-## Button actions
-
-The UI builds these commands for you:
+The UI creates the stored action strings automatically:
 
 | Action | Stored command |
 | --- | --- |
@@ -111,29 +140,44 @@ The UI builds these commands for you:
 | OBS recording toggle | `obs_record_toggle` |
 | OBS streaming toggle | `obs_stream_toggle` |
 
-Use `shell:` only for commands that need shell features such as pipes, redirection, or environment expansion. Normal `app:` and `cmd:` actions launch the executable directly.
+Use `shell:` only for commands that genuinely require shell features. Normal `app:` and `cmd:` actions launch directly without a shell.
 
-## Configuration
+## Linux audio
 
-Edits are saved to `~/.streamflow/config.json`. Set `STREAMFLOW_CONFIG` to override that path for portable setups or testing.
+On Linux, StreamFlow uses the first supported audio tool it finds:
 
-The OBS password is stored only in that local configuration file. If the file is on a shared machine, protect it with normal operating-system file permissions.
+- `wpctl` for PipeWire.
+- `pactl` for PulseAudio.
+- `amixer` for ALSA.
+
+Install one of those through your Linux distribution if system audio actions report that no supported tool is available.
 
 ## Tests
+
+Install development dependencies and run the local suite:
 
 ```bash
 python -m pip install -r requirements-dev.txt
 python -m pytest -q
 ```
 
-Or build the test container locally:
+Or run the validation container:
 
 ```bash
 docker compose run --rm test
 ```
 
-The Docker configuration is intentionally for validation. StreamFlow is a native Qt desktop GUI, so exposing a fake HTTP port from a container is not useful.
+The Docker configuration is intentionally for headless validation. StreamFlow itself is a native Qt desktop application rather than a web service.
 
-## Cost
+## Cost and hosting
 
-StreamFlow itself does not need GitHub Codespaces, GitHub Copilot, paid GitHub Actions minutes, a hosted AI model, or any paid API. You can develop, test, and run it entirely on your own machine.
+StreamFlow does not require:
+
+- GitHub Codespaces.
+- GitHub Copilot.
+- Paid GitHub Actions minutes.
+- A hosted AI model.
+- A cloud database or backend.
+- A paid API.
+
+Development, testing, configuration, OBS control, and normal use can all happen locally on your own computer.
